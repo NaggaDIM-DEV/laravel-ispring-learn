@@ -1,0 +1,40 @@
+{
+    "name": "naggadim-dev/laravel-ispring-learn",
+    "description": "iSpring Learn - API",
+    "require": {
+        "php": "^8.2",
+        "illuminate/support": "^12.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^12.2",
+        "orchestra/testbench": "^10.4"
+    },
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "NaggadimDev\\LaravelIspringLearn\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "NaggaDIM-DEV",
+            "email": "naggadim@vivaldi.net"
+        }
+    ],
+    "minimum-stability": "stable",
+    "extra": {
+        "laravel": {
+            "providers": [
+                "NaggadimDev\\LaravelIspringLearn\\Providers\\ISpringLearnServiceProvider"
+            ],
+            "aliases": {
+                "ISpringLearn": "NaggadimDev\\LaravelIspringLearn\\Facades\\ISpringLearn"
+            }
+        }
+    },
+    "scripts": {
+        "test": [
+            "vendor/bin/phpunit"
+        ]
+    }
+}
