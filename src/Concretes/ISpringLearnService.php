@@ -10,7 +10,11 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use NaggadimDev\LaravelIspringLearn\Contracts\ISpringLearnServiceContract;
+use NaggadimDev\LaravelIspringLearn\DTO\Department;
+use NaggadimDev\LaravelIspringLearn\DTO\Subordination;
+use NaggadimDev\LaravelIspringLearn\DTO\UserProfile;
 use NaggadimDev\LaravelIspringLearn\Responses\AuthorizationResponse;
+use NaggadimDev\LaravelIspringLearn\Responses\DepartmentsPaginatedResponse;
 use NaggadimDev\LaravelIspringLearn\Responses\UsersPaginatedResponse;
 use Psr\Log\LoggerInterface;
 
@@ -79,7 +83,6 @@ class ISpringLearnService implements ISpringLearnServiceContract
         $requestID = (string) Str::uuid();
         if(config('ispring-learn.logging.enabled')) {
             $this->logger()->info("[REQUEST][GET][$requestID]: $url", [
-                'requestID' => $requestID,
                 'url'       => $url,
                 'query'     => $query
             ]);
@@ -88,9 +91,6 @@ class ISpringLearnService implements ISpringLearnServiceContract
         $response = Http::withHeaders($this->defaultHeaders())->get($url, $query);
         if(config('ispring-learn.logging.enabled')) {
             $this->logger()->debug("[RESPONSE][GET][$requestID][{$response->status()}]: $url", [
-                'requestID' => $requestID,
-                'url'       => $url,
-                'query'     => $query,
                 'status'    => $response->status(),
                 'response'  => $response->body()
             ]);
@@ -99,10 +99,112 @@ class ISpringLearnService implements ISpringLearnServiceContract
         return $response;
     }
 
-    public function usersPaginated(?array $parameters = null): UsersPaginatedResponse
+    /**
+     * @throws ConnectionException
+     */
+    public function postRequest(string $url, ?array $data = null): PromiseInterface|Response
+    {
+        $url = $this->buildUrl($url);
+        $requestID = (string) Str::uuid();
+        if(config('ispring-learn.logging.enabled')) {
+            $this->logger()->info("[REQUEST][POST][$requestID]: $url", [
+                'data'      => $data
+            ]);
+        }
+
+        $response = Http::withHeaders($this->defaultHeaders())->post($url, $data);
+        if(config('ispring-learn.logging.enabled')) {
+            $this->logger()->debug("[RESPONSE][POST][$requestID][{$response->status()}]: $url", [
+                'status'    => $response->status(),
+                'response'  => $response->body()
+            ]);
+        }
+
+        return $response;
+    }
+
+    /**
+     * @throws ConnectionException
+     */
+    public function deleteRequest(string $url): PromiseInterface|Response
+    {
+        $url = $this->buildUrl($url);
+        $requestID = (string) Str::uuid();
+        if(config('ispring-learn.logging.enabled')) {
+            $this->logger()->info("[REQUEST][DELETE][$requestID]: $url");
+        }
+
+        $response = Http::withHeaders($this->defaultHeaders())->delete($url);
+        if(config('ispring-learn.logging.enabled')) {
+            $this->logger()->debug("[RESPONSE][DELETE][$requestID][{$response->status()}]: $url", [
+                'status'    => $response->status(),
+            ]);
+        }
+
+        return $response;
+    }
+
+    public function getDepartmentsPaginated(?array $parameters = null): DepartmentsPaginatedResponse
+    {
+        return DepartmentsPaginatedResponse::fromJSON(
+            $this->getRequest('index.php/api/v2/departments', $parameters)->json()
+        );
+    }
+
+    public function getDepartments(): array
+    {
+        return array_map(
+            fn($department) => Department::fromJSON($department),
+            $this->getRequest('index.php/api/v2/department')->json()
+        );
+    }
+
+    public function getDepartment(string $departmentId): Department
+    {
+        return Department::fromJSON(
+            $this->getRequest("index.php/api/v2/department/$departmentId")->json()
+        );
+    }
+
+    public function addDepartment(string $parentDepartmentId, string $name, ?string $code = null, ?Subordination $subordination = null, ?Subordination $coSubordination = null): string
+    {
+        return $this->postRequest('index.php/api/v2/department', [
+            'parentDepartmentId' => $parentDepartmentId,
+            'name' => $name,
+            'code' => $code,
+            'subordination' => $subordination?->toJSON(),
+            'coSubordination' => $coSubordination?->toJSON(),
+        ])->json();
+    }
+
+    public function editDepartment(string $departmentId, ?string $parentDepartmentId = null, ?string $name = null, ?string $code = null, ?Subordination $subordination = null, ?Subordination $coSubordination = null): bool
+    {
+        $data = [];
+        if(!empty($parentDepartmentId)) { $data['parentDepartmentId'] = $parentDepartmentId; }
+        if(!empty($name)) { $data['name'] = $name; }
+        if(!empty($code)) { $data['code'] = $code; }
+        if(!empty($subordination)) { $data['subordination'] = $subordination->toJSON(); }
+        if(!empty($coSubordination)) { $data['coSubordination'] = $coSubordination->toJSON(); }
+
+        return $this->postRequest("index.php/api/v2/department/$departmentId", $data)->status() === 204;
+    }
+
+    public function deleteDepartment(string $departmentId): bool
+    {
+        return $this->deleteRequest("index.php/api/v2/department/$departmentId")->status() === 204;
+    }
+
+    public function getUsersPaginated(?array $parameters = null): UsersPaginatedResponse
     {
         return UsersPaginatedResponse::fromJSON(
             $this->getRequest('index.php/api/v2/users', $parameters)->json()
+        );
+    }
+
+    public function getUser(string $userId): UserProfile
+    {
+        return UserProfile::fromJSON(
+            $this->getRequest("index.php/api/v2/user/$userId/v2")->json()
         );
     }
 }
