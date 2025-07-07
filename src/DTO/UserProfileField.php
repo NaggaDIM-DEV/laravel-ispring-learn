@@ -16,4 +16,12 @@ readonly class UserProfileField
             value: $json['value'],
         );
     }
+
+    public function toJSON(): array
+    {
+        return [
+            'name' => $this->name,
+            'value' => $this->value,
+        ];
+    }
 }

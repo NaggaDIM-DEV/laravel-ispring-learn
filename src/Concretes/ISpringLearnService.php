@@ -2,6 +2,7 @@
 
 namespace NaggadimDev\LaravelIspringLearn\Concretes;
 
+use Carbon\Carbon;
 use GuzzleHttp\Promise\PromiseInterface;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Response;
@@ -11,8 +12,10 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use NaggadimDev\LaravelIspringLearn\Contracts\ISpringLearnServiceContract;
 use NaggadimDev\LaravelIspringLearn\DTO\Department;
+use NaggadimDev\LaravelIspringLearn\DTO\Role;
 use NaggadimDev\LaravelIspringLearn\DTO\Subordination;
 use NaggadimDev\LaravelIspringLearn\DTO\UserProfile;
+use NaggadimDev\LaravelIspringLearn\DTO\UserProfileField;
 use NaggadimDev\LaravelIspringLearn\Responses\AuthorizationResponse;
 use NaggadimDev\LaravelIspringLearn\Responses\DepartmentsPaginatedResponse;
 use NaggadimDev\LaravelIspringLearn\Responses\UsersPaginatedResponse;
@@ -201,10 +204,155 @@ class ISpringLearnService implements ISpringLearnServiceContract
         );
     }
 
+    public function getUsers(?array $parameters = null): array
+    {
+        return array_map(
+            fn($e) => UserProfile::fromJSON($e),
+            $this->getRequest('index.php/api/v2/user/v2')->json()
+        );
+    }
+
     public function getUser(string $userId): UserProfile
     {
         return UserProfile::fromJSON(
             $this->getRequest("index.php/api/v2/user/$userId/v2")->json()
         );
+    }
+
+    public function addUser(
+        string $departmentId,
+        string $login,
+        array $fields,
+        ?string $email = null,
+        ?string $password = null,
+        bool $sendLoginEmail = false,
+        ?string $invitationMessage = null,
+        bool $sendLoginSMS = false,
+        ?string $invitationSMSMessage = null,
+        ?string $role = null,
+        ?string $roleId = null,
+        ?array $manageableDepartmentIds = null,
+        ?array $groups = null,
+        ?array $roles = null
+    ): string
+    {
+        return $this->postRequest('index.php/api/v2/user', [
+            'departmentId' => $departmentId,
+            'login' => $login,
+            'fields' => array_map(fn(UserProfileField $field) => $field->toJSON(), $fields),
+            'email' => $email,
+            'password' => $password,
+            'sendLoginEmail' => $sendLoginEmail,
+            'invitationMessage' => $invitationMessage,
+            'sendLoginSMS' => $sendLoginSMS,
+            'invitationSMSMessage' => $invitationSMSMessage,
+            'role' => $role,
+            'roleId' => $roleId,
+            'manageableDepartmentIds' => $manageableDepartmentIds,
+            'groups' => $groups,
+            'roles' => $roles ? array_map(fn(Role $role) => $role->toJSON(), $roles) : null,
+        ])->json();
+    }
+
+    public function editUser(
+        string $userId,
+        ?string $departmentId = null,
+        ?array $fields = null,
+        ?string $role = null,
+        ?string $roleId = null,
+        ?array $manageableDepartmentIds = null,
+        ?array $groupIds = null,
+        ?array $roles = null
+    ): bool
+    {
+        $data = [];
+        if(!empty($departmentId))   { $data['departmentId'] = $departmentId; }
+        if(!empty($fields))         { $data['fields'] = array_map(fn(UserProfileField $field) => $field->toJSON(), $fields); }
+        if(!empty($role))           { $data['role'] = $role; }
+        if(!empty($roleId))         { $data['roleId'] = $roleId; }
+        if(!empty($manageableDepartmentIds)) { $data['manageableDepartmentIds'] = $manageableDepartmentIds; }
+        if(!empty($groupIds))       { $data['groupIds'] = $groupIds; }
+        if(!empty($roles))          { $data['roles'] = array_map(fn(Role $role) => $role->toJSON(), $roles); }
+
+        return $this->postRequest("index.php/api/v2/user/$userId", $data)->status() === 204;
+    }
+
+    public function editUserPassword(string $userId, string $password): bool
+    {
+        return $this->postRequest("index.php/api/v2/user/$userId/password", [
+            'password' => $password,
+        ])->successful();
+    }
+
+    public function editUserStatus(string $userId, int $status): bool
+    {
+        return $this->postRequest("index.php/api/v2/user/$userId/status", [
+            'status' => $status,
+        ])->successful();
+    }
+
+    public function activateUser(string $userId): bool
+    {
+        return $this->editUserStatus($userId, 1);
+    }
+
+    public function deactivateUser(string $userId): bool
+    {
+        return $this->editUserStatus($userId, 3);
+    }
+
+    public function terminateUser(string $userId): bool
+    {
+        return $this->editUserStatus($userId, 5);
+    }
+
+    public function deactivateUserScheduled(string $userId, Carbon $date): bool
+    {
+        return $this->postRequest("index.php/api/v2/user/$userId/scheduled_deactivation", [
+            'date' => $date->format('Y-m-d'),
+        ])->successful();
+    }
+
+    public function deactivateUserScheduledCancel(string $userId): bool
+    {
+        return $this->deleteRequest("index.php/api/v2/user/$userId/scheduled_deactivation")
+            ->successful();
+    }
+
+    public function terminateUserScheduled(string $userId, Carbon $date): bool
+    {
+        return $this->postRequest("index.php/api/v2/user/$userId/scheduled_termination", [
+            'date' => $date->format('Y-m-d'),
+        ])->successful();
+    }
+
+    public function terminateUserScheduledCancel(string $userId): bool
+    {
+        return $this->deleteRequest("index.php/api/v2/user/$userId/scheduled_termination")
+            ->successful();
+    }
+
+    public function massActivateUsers(array $userIds): bool
+    {
+        return $this->postRequest("index.php/api/v2/users/activate", ['userIds' => $userIds])
+            ->successful();
+    }
+
+    public function massDeactivateUsers(array $userIds): bool
+    {
+        return $this->postRequest("index.php/api/v2/users/deactivate", ['userIds' => $userIds])
+            ->successful();
+    }
+
+    public function massTerminateUsers(array $userIds): bool
+    {
+        return $this->postRequest("index.php/api/v2/users/terminate", ['userIds' => $userIds])
+            ->successful();
+    }
+
+    public function deleteUser(string $userId): bool
+    {
+        return $this->deleteRequest("index.php/api/v2/user/$userId")
+            ->successful();
     }
 }
