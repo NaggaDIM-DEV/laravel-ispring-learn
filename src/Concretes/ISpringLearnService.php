@@ -4,7 +4,6 @@ namespace NaggadimDev\LaravelIspringLearn\Concretes;
 
 use Carbon\Carbon;
 use GuzzleHttp\Promise\PromiseInterface;
-use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
@@ -16,6 +15,10 @@ use NaggadimDev\LaravelIspringLearn\DTO\Role;
 use NaggadimDev\LaravelIspringLearn\DTO\Subordination;
 use NaggadimDev\LaravelIspringLearn\DTO\UserProfile;
 use NaggadimDev\LaravelIspringLearn\DTO\UserProfileField;
+use NaggadimDev\LaravelIspringLearn\Exceptions\BadRequestException;
+use NaggadimDev\LaravelIspringLearn\Exceptions\ISpringLearnHTTPException;
+use NaggadimDev\LaravelIspringLearn\Exceptions\PermissionDeniedException;
+use NaggadimDev\LaravelIspringLearn\Exceptions\UnauthorizedException;
 use NaggadimDev\LaravelIspringLearn\Responses\AuthorizationResponse;
 use NaggadimDev\LaravelIspringLearn\Responses\DepartmentsPaginatedResponse;
 use NaggadimDev\LaravelIspringLearn\Responses\UsersPaginatedResponse;
@@ -62,11 +65,11 @@ class ISpringLearnService implements ISpringLearnServiceContract
     {
         $defaultHeaders = ['Accept' => 'application/json'];
 
-        if(config('ispring-learn.auth_type', 'api-key') === 'api-key') {
+        if(config('ispring-learn.auth_type', 'login') === 'api-key') {
             $defaultHeaders['Authorization'] = 'Bearer ' . $this->getAuthorizationToken();
         }
 
-        if(config('ispring-learn.auth_type', 'api-key') === 'login') {
+        if(config('ispring-learn.auth_type', 'login') === 'login') {
             $defaultHeaders = array_merge($defaultHeaders, [
                 'X-Auth-Account-Url'    => config('ispring-learn.account_url'),
                 'X-Auth-Email'          => config('ispring-learn.username'),
@@ -78,8 +81,23 @@ class ISpringLearnService implements ISpringLearnServiceContract
     }
 
     /**
-     * @throws ConnectionException
+     * @throws BadRequestException
+     * @throws UnauthorizedException
+     * @throws PermissionDeniedException
+     * @throws ISpringLearnHTTPException
      */
+    protected function validateResponse(PromiseInterface|Response &$response): void
+    {
+        if($response->failed()) {
+            throw match ($response->status()) {
+                400 => new BadRequestException($response),
+                401 => new UnauthorizedException($response),
+                403 => new PermissionDeniedException($response),
+                default => new ISpringLearnHTTPException($response),
+            };
+        }
+    }
+
     public function getRequest(string $url, ?array $query = null): PromiseInterface|Response
     {
         $url = $this->buildUrl($url);
@@ -99,12 +117,11 @@ class ISpringLearnService implements ISpringLearnServiceContract
             ]);
         }
 
+        $this->validateResponse($response);
+
         return $response;
     }
 
-    /**
-     * @throws ConnectionException
-     */
     public function postRequest(string $url, ?array $data = null): PromiseInterface|Response
     {
         $url = $this->buildUrl($url);
@@ -123,12 +140,11 @@ class ISpringLearnService implements ISpringLearnServiceContract
             ]);
         }
 
+        $this->validateResponse($response);
+
         return $response;
     }
 
-    /**
-     * @throws ConnectionException
-     */
     public function deleteRequest(string $url): PromiseInterface|Response
     {
         $url = $this->buildUrl($url);
@@ -143,6 +159,8 @@ class ISpringLearnService implements ISpringLearnServiceContract
                 'status'    => $response->status(),
             ]);
         }
+
+        $this->validateResponse($response);
 
         return $response;
     }

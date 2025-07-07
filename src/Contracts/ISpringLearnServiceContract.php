@@ -4,18 +4,59 @@ namespace NaggadimDev\LaravelIspringLearn\Contracts;
 
 use Carbon\Carbon;
 use GuzzleHttp\Promise\PromiseInterface;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Response;
 use NaggadimDev\LaravelIspringLearn\DTO\Department;
 use NaggadimDev\LaravelIspringLearn\DTO\Role;
 use NaggadimDev\LaravelIspringLearn\DTO\Subordination;
 use NaggadimDev\LaravelIspringLearn\DTO\UserProfile;
 use NaggadimDev\LaravelIspringLearn\DTO\UserProfileField;
+use NaggadimDev\LaravelIspringLearn\Exceptions\BadRequestException;
+use NaggadimDev\LaravelIspringLearn\Exceptions\ISpringLearnHTTPException;
+use NaggadimDev\LaravelIspringLearn\Exceptions\PermissionDeniedException;
+use NaggadimDev\LaravelIspringLearn\Exceptions\UnauthorizedException;
 use NaggadimDev\LaravelIspringLearn\Responses\DepartmentsPaginatedResponse;
 use NaggadimDev\LaravelIspringLearn\Responses\UsersPaginatedResponse;
 
 interface ISpringLearnServiceContract
 {
+    /**
+     * @param string $url
+     * @param array|null $query
+     * @return PromiseInterface|Response
+     *
+     * @throws ConnectionException
+     * @throws BadRequestException
+     * @throws UnauthorizedException
+     * @throws PermissionDeniedException
+     * @throws ISpringLearnHTTPException
+     */
     public function getRequest(string $url, ?array $query = null): PromiseInterface|Response;
+
+    /**
+     * @param string $url
+     * @param array|null $data
+     * @return PromiseInterface|Response
+     *
+     * @throws ConnectionException
+     * @throws BadRequestException
+     * @throws UnauthorizedException
+     * @throws PermissionDeniedException
+     * @throws ISpringLearnHTTPException
+     */
+    public function postRequest(string $url, ?array $data = null): PromiseInterface|Response;
+
+    /**
+     * @param string $url
+     * @return PromiseInterface|Response
+     *
+     * @throws ConnectionException
+     * @throws BadRequestException
+     * @throws UnauthorizedException
+     * @throws PermissionDeniedException
+     * @throws ISpringLearnHTTPException
+     */
+    public function deleteRequest(string $url): PromiseInterface|Response;
 
     /**
      * @reference https://docs.ispring.ru/pages/viewpage.action?pageId=24677928
@@ -24,12 +65,24 @@ interface ISpringLearnServiceContract
      *     pageToken: null|string,
      * } $parameters
      * @return DepartmentsPaginatedResponse
+     *
+     * @throws ConnectionException
+     * @throws BadRequestException
+     * @throws UnauthorizedException
+     * @throws PermissionDeniedException
+     * @throws ISpringLearnHTTPException
      */
     public function getDepartmentsPaginated(?array $parameters = null): DepartmentsPaginatedResponse;
 
     /**
      * @reference https://docs.ispring.ru/pages/viewpage.action?pageId=18808974
      * @return array<Department>
+     *
+     * @throws ConnectionException
+     * @throws BadRequestException
+     * @throws UnauthorizedException
+     * @throws PermissionDeniedException
+     * @throws ISpringLearnHTTPException
      */
     public function getDepartments(): array;
 
@@ -37,6 +90,12 @@ interface ISpringLearnServiceContract
      * @reference https://docs.ispring.ru/pages/viewpage.action?pageId=18809544
      * @param string $departmentId
      * @return Department
+     *
+     * @throws ConnectionException
+     * @throws BadRequestException
+     * @throws UnauthorizedException
+     * @throws PermissionDeniedException
+     * @throws ISpringLearnHTTPException
      */
     public function getDepartment(string $departmentId): Department;
 
@@ -48,6 +107,12 @@ interface ISpringLearnServiceContract
      * @param Subordination|null $subordination
      * @param Subordination|null $coSubordination
      * @return string
+     *
+     * @throws ConnectionException
+     * @throws BadRequestException
+     * @throws UnauthorizedException
+     * @throws PermissionDeniedException
+     * @throws ISpringLearnHTTPException
      */
     public function addDepartment(
         string $parentDepartmentId,
@@ -66,6 +131,12 @@ interface ISpringLearnServiceContract
      * @param Subordination|null $subordination
      * @param Subordination|null $coSubordination
      * @return bool
+     *
+     * @throws ConnectionException
+     * @throws BadRequestException
+     * @throws UnauthorizedException
+     * @throws PermissionDeniedException
+     * @throws ISpringLearnHTTPException
      */
     public function editDepartment(
         string $departmentId,
@@ -80,6 +151,12 @@ interface ISpringLearnServiceContract
      * @reference https://docs.ispring.ru/pages/viewpage.action?pageId=18808972
      * @param string $departmentId
      * @return bool
+     *
+     * @throws ConnectionException
+     * @throws BadRequestException
+     * @throws UnauthorizedException
+     * @throws PermissionDeniedException
+     * @throws ISpringLearnHTTPException
      */
     public function deleteDepartment(string $departmentId): bool;
 
@@ -100,6 +177,12 @@ interface ISpringLearnServiceContract
      *     },
      * } $parameters
      * @return UsersPaginatedResponse
+     *
+     * @throws ConnectionException
+     * @throws BadRequestException
+     * @throws UnauthorizedException
+     * @throws PermissionDeniedException
+     * @throws ISpringLearnHTTPException
      */
     public function getUsersPaginated(?array $parameters = null): UsersPaginatedResponse;
 
@@ -110,6 +193,12 @@ interface ISpringLearnServiceContract
      *     groups: null|array<string>
      * } $parameters
      * @return array<UserProfile>
+     *
+     * @throws ConnectionException
+     * @throws BadRequestException
+     * @throws UnauthorizedException
+     * @throws PermissionDeniedException
+     * @throws ISpringLearnHTTPException
      */
     public function getUsers(?array $parameters = null): array;
 
@@ -117,6 +206,12 @@ interface ISpringLearnServiceContract
      * @reference https://docs.ispring.ru/pages/viewpage.action?pageId=18808978
      * @param string $userId
      * @return UserProfile
+     *
+     * @throws ConnectionException
+     * @throws BadRequestException
+     * @throws UnauthorizedException
+     * @throws PermissionDeniedException
+     * @throws ISpringLearnHTTPException
      */
     public function getUser(string $userId): UserProfile;
 
@@ -136,6 +231,12 @@ interface ISpringLearnServiceContract
      * @param array<string>|null $groups
      * @param array<Role>|null $roles
      * @return string
+     *
+     * @throws ConnectionException
+     * @throws BadRequestException
+     * @throws UnauthorizedException
+     * @throws PermissionDeniedException
+     * @throws ISpringLearnHTTPException
      */
     public function addUser(
         string $departmentId,
@@ -165,6 +266,12 @@ interface ISpringLearnServiceContract
      * @param array<string>|null $groupIds
      * @param array<Role>|null $roles
      * @return bool
+     *
+     * @throws ConnectionException
+     * @throws BadRequestException
+     * @throws UnauthorizedException
+     * @throws PermissionDeniedException
+     * @throws ISpringLearnHTTPException
      */
     public function editUser(
         string $userId,
@@ -182,6 +289,12 @@ interface ISpringLearnServiceContract
      * @param string $userId
      * @param string $password
      * @return bool
+     *
+     * @throws ConnectionException
+     * @throws BadRequestException
+     * @throws UnauthorizedException
+     * @throws PermissionDeniedException
+     * @throws ISpringLearnHTTPException
      */
     public function editUserPassword(string $userId, string $password): bool;
 
@@ -190,11 +303,49 @@ interface ISpringLearnServiceContract
      * @param string $userId
      * @param int $status
      * @return bool
+     *
+     * @throws ConnectionException
+     * @throws BadRequestException
+     * @throws UnauthorizedException
+     * @throws PermissionDeniedException
+     * @throws ISpringLearnHTTPException
      */
     public function editUserStatus(string $userId, int $status): bool;
 
+    /**
+     * @param string $userId
+     * @return bool
+     *
+     * @throws ConnectionException
+     * @throws BadRequestException
+     * @throws UnauthorizedException
+     * @throws PermissionDeniedException
+     * @throws ISpringLearnHTTPException
+     */
     public function activateUser(string $userId): bool;
+
+    /**
+     * @param string $userId
+     * @return bool
+     *
+     * @throws ConnectionException
+     * @throws BadRequestException
+     * @throws UnauthorizedException
+     * @throws PermissionDeniedException
+     * @throws ISpringLearnHTTPException
+     */
     public function deactivateUser(string $userId): bool;
+
+    /**
+     * @param string $userId
+     * @return bool
+     *
+     * @throws ConnectionException
+     * @throws BadRequestException
+     * @throws UnauthorizedException
+     * @throws PermissionDeniedException
+     * @throws ISpringLearnHTTPException
+     */
     public function terminateUser(string $userId): bool;
 
     /**
@@ -202,6 +353,12 @@ interface ISpringLearnServiceContract
      * @param string $userId
      * @param Carbon $date
      * @return bool
+     *
+     * @throws ConnectionException
+     * @throws BadRequestException
+     * @throws UnauthorizedException
+     * @throws PermissionDeniedException
+     * @throws ISpringLearnHTTPException
      */
     public function deactivateUserScheduled(string $userId, Carbon $date): bool;
 
@@ -209,6 +366,12 @@ interface ISpringLearnServiceContract
      * @reference https://docs.ispring.ru/pages/viewpage.action?pageId=28299988
      * @param string $userId
      * @return bool
+     *
+     * @throws ConnectionException
+     * @throws BadRequestException
+     * @throws UnauthorizedException
+     * @throws PermissionDeniedException
+     * @throws ISpringLearnHTTPException
      */
     public function deactivateUserScheduledCancel(string $userId): bool;
 
@@ -217,6 +380,12 @@ interface ISpringLearnServiceContract
      * @param string $userId
      * @param Carbon $date
      * @return bool
+     *
+     * @throws ConnectionException
+     * @throws BadRequestException
+     * @throws UnauthorizedException
+     * @throws PermissionDeniedException
+     * @throws ISpringLearnHTTPException
      */
     public function terminateUserScheduled(string $userId, Carbon $date): bool;
 
@@ -224,6 +393,12 @@ interface ISpringLearnServiceContract
      * @reference https://docs.ispring.ru/pages/viewpage.action?pageId=71837283
      * @param string $userId
      * @return bool
+     *
+     * @throws ConnectionException
+     * @throws BadRequestException
+     * @throws UnauthorizedException
+     * @throws PermissionDeniedException
+     * @throws ISpringLearnHTTPException
      */
     public function terminateUserScheduledCancel(string $userId): bool;
 
@@ -231,6 +406,12 @@ interface ISpringLearnServiceContract
      * @reference https://docs.ispring.ru/pages/viewpage.action?pageId=71833760
      * @param array<string> $userIds
      * @return bool
+     *
+     * @throws ConnectionException
+     * @throws BadRequestException
+     * @throws UnauthorizedException
+     * @throws PermissionDeniedException
+     * @throws ISpringLearnHTTPException
      */
     public function massActivateUsers(array $userIds): bool;
 
@@ -238,6 +419,12 @@ interface ISpringLearnServiceContract
      * @reference https://docs.ispring.ru/pages/viewpage.action?pageId=71833777
      * @param array<string> $userIds
      * @return bool
+     *
+     * @throws ConnectionException
+     * @throws BadRequestException
+     * @throws UnauthorizedException
+     * @throws PermissionDeniedException
+     * @throws ISpringLearnHTTPException
      */
     public function massDeactivateUsers(array $userIds): bool;
 
@@ -245,6 +432,12 @@ interface ISpringLearnServiceContract
      * @reference https://docs.ispring.ru/pages/viewpage.action?pageId=71837289
      * @param array<string> $userIds
      * @return bool
+     *
+     * @throws ConnectionException
+     * @throws BadRequestException
+     * @throws UnauthorizedException
+     * @throws PermissionDeniedException
+     * @throws ISpringLearnHTTPException
      */
     public function massTerminateUsers(array $userIds): bool;
 
@@ -252,6 +445,12 @@ interface ISpringLearnServiceContract
      * @reference https://docs.ispring.ru/pages/viewpage.action?pageId=18808980
      * @param string $userId
      * @return bool
+     *
+     * @throws ConnectionException
+     * @throws BadRequestException
+     * @throws UnauthorizedException
+     * @throws PermissionDeniedException
+     * @throws ISpringLearnHTTPException
      */
     public function deleteUser(string $userId): bool;
 }
